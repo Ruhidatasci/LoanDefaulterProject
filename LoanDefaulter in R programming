@@ -1,0 +1,339 @@
+#Import Performance Processed data
+PerformanceProcessed <- read.csv(file.choose())
+str(PerformanceProcessed)
+#removing duplicates
+distinct_data <- dplyr::distinct(PerformanceProcessed) 
+View(distinct_data)
+table(distinct_data$StateName)
+table(distinct_data$HubName)
+table(distinct_data$LocationName)
+table(distinct_data$FinanceAmt)
+table(distinct_data$LoanTypeName)#remove bus, car, construction equipment and Null type
+table(distinct_data$Defaulter) #result shows class imbalance
+length(unique(distinct_data$LocationName)) #1060
+summary(distinct_data)
+str(distinct_data) #target variable is integer type here
+
+#Exploratory data analysis 2nd, 3rd and 4th business moments
+library(moments)
+kurtosis(distinct_data[,c(6,7,8)])
+skewness(distinct_data[,c(6,7,8)])
+hist(distinct_data$FinanceAmt)
+hist(distinct_data$Instalment)
+var(distinct_data[,c(6,7,8)])
+sqrt(var(distinct_data[,c(6,7,8)]))
+attach(distinct_data)
+hist(distinct_data$Loan.Duration)
+
+##########Removing unnecessary data##############
+mydatanew <- subset(distinct_data, LoanTypeName!= "BUSES")
+mydatanew <- subset(mydatanew, LoanTypeName!= "CAR")
+table(mydatanew$LoanTypeName)
+#Removing data with NULL loan type also
+mydata_final <- subset(mydatanew, LoanTypeName!="NULL")
+table(mydata_final$LoanTypeName)
+View(mydata_final)
+#Checking if there is class imbalance now
+table(mydata_final$Defaulter) #no imbalance
+summary(mydata_final)
+
+###Analysing Brand Type#####################
+table(mydata_final$BrandTypeName)
+#Finding Brandtypes which are unique
+Number <- unique(mydata_final$BrandTypeName)
+length(Number) #165 brandtypes
+length(mydata_final$BrandTypeName)
+a <- sort(table(mydata_final$BrandTypeName))
+length(a[a<2]) #60 brandtypes of which loan is taken only one or less
+#####Grouping company names, which are same to reduce number of levels#######
+library(car)
+mydata_final$BrandTypeName = recode(mydata_final$BrandTypeName, "c('VOLVO INDIA PVT. LTD.','VOLVO MOTORS','VOLVO TRUCKS INDIA') = 'Volvo';c('VE COMMERCIAL VEHICLES LIMITED','VE COMMERCIAL PVT. LTD.')= 'VE';c('WIRTGEN INDIA PRIVATE LIMITED','WIRTGEN INDIA PVT LTD')='WIRTGEN';c('UNIVERSAL CONSTRUCTION MACHINERY AND EQUIPMENT LTD','UNIVERSAL AUTO INDUSTRIES','UNIVERSAL INDUSTRIAL') = 'UNIVERSAL Industries';c('TVS','TVS MOTORS')='TVS';c('TATA HITACHI','TATA HITACHI CONSTRUCTION MACHINERY COMPANY LIMITED','TATA MOTORS') ='TATA';c('TOYOTA KIRLOSKAR MOTORS','TOYOTA MOTORS') = 'TOYOTA';c('TAFE','TAFE (TRACTOR AND FARM EQUIPMENT LTD)') = 'TAFE';
+                                    c('SWARAJ','SWARAJ MAZDA LTD')='SWARAJ';c('SANY HEAVY INDUSTRY INDIA PVT LTD','SANY HEAVY INDUSTRY INDIA PVT.LTD.','SANY') = 'SANY';c('MAHINDRA AND MAHINDRA LTD','MAHINDRA CONSTRUCTION EQUIPMENT','MAHINDRA NAVISTAR AUTOMOTIVES LTD','MAHINDRA TWOWHEELER') = 'MAHINDARA';c('L AND T - CASE','L AND T CASE EQUIPMENT LTD','CASE NEW HOLLAND CONSTRUCTION EQUIPEMENT (INDIA) PVT LTD.') = 'L&T-Case';
+                                    c('MARUTHI','MARUTI SUZUKI INDIA LTD','MARUTI UDYOG LTD')= 'MARUTI';c('JAKSON','JAKSON LIMITED','JAKSON / CUMMINS') = 'JAKSON';c('KOMATSU ASIA AND PACIFIC PTE LTD','KOMATSU INDIA PVT. LTD.','KOMATSU INDIA PRIVATE LIMITED (KIPL)')= 'KOMATSU';c('ESCORT','ESCORT AND FARMTRACK','ESCORT CONSTRUCTION EQUIPMENTLTD','ESCORTS CONSTRUCTION EQUIPMENT LTD','ESCORTS LTD') = 'ESCORT GROUP';c('ACE','ACTION CONSTRUCTION EQUIPMENT LIMITED') = 'ACE'")
+
+mydata_final$LocationName <- recode(mydata_final$LocationName, "c('ADALAJ TW','ADAJAN TW')='ADALAJ TW'")
+table(mydata_final$BrandTypeName)
+length(unique(mydata_final$BrandTypeName)) #138
+summary(mydata_final)
+
+###########visual plot##################
+boxplot(mydata_final)
+par(mfrow = c(2,2))
+plot(mydata_final$Instalment,mydata_final$Defaulter)
+plot(mydata_final$FinanceAmt,mydata_final$Defaulter)
+plot(mydata_final$Loan.Duration,mydata_final$Defaulter)
+plot(mydata_final$StateName,mydata_final$Defaulter)
+
+####looking for outliers##################
+memory.size(max = TRUE)
+boxplot(mydata_final$FinanceAmt)
+length(boxplot(mydata_final$FinanceAmt, plot = F)$out) #62729
+length(boxplot(mydata_final$Instalment, plot = F)$out) #59768
+length(boxplot(mydata_final$Loan.Duration, plot = F)$out) #1513
+#this outlier will be remove if efficiency is less while creating model otherwise financial datasets outliers 
+#also can be helpful in giving results
+boxplot(mydata_final$FinanceAmt)
+"R--Vanilla"
+str(mydata_final$LoanTypeName)
+unique(mydata_final$LoanTypeName)
+boxplot(mydata_final, las = 2, col = c("red","sienna","palevioletred1","royalblue2","yellow","green","red","sienna","royalblue2"))
+boxplot(mydata_final$FinanceAmt, xlab = "Finance Amount", pars= list(outcol = "red"))
+404441*70/100
+write.csv(mydata_final, file = "MyprojectCBN.csv")
+getwd()
+mydata_final <- MyprojectCBN[,-1]
+######Treating outliers
+mydata_final$FinanceAmt <- 1/mydata_final$FinanceAmt
+length(boxplot(mydata_final$FinanceAmt, plot = F)$out)
+mydata_final$Instalment <- 1/mydata_final$Instalment
+length(boxplot(mydata_final$Instalment, plot = F)$out)
+mydata_final$Loan.Duration <- (mydata_final$Loan.Duration)^(1/2)
+length(boxplot(mydata_final$Loan.Duration, plot = F)$out)
+boxplot(mydata_final[,c(6,7,8)])
+Train <- mydata_final[1:284759,]
+Test <- mydata_final[284760:406798,]
+###########Applying PCA technique on numerical data####################
+pcaobj <- princomp(Train[,c(6,7,8)],cor=TRUE,scores = TRUE,covmat = NULL)
+summary(pcaobj)
+loadings(pcaobj)
+plot(pcaobj)
+plot(pcaobj, type="l")
+plot(cumsum(pcaobj$sdev*pcaobj$sdev)*100/(sum(pcaobj$sdev*pcaobj$sdev)),type="b")
+#biplot(pcaobj)
+attributes(pcaobj)
+pcaobj$scores
+#choosing onling comp1 and comp2 from PCA
+comp1 <- data.frame(pcaobj$scores[,1:2])
+mydata_Train <- cbind(comp1,Train[,c(1:5,9)])
+str(mydata_Train)
+##PCA test data
+pcaobjTest <- princomp(Test[,c(6,7,8)],cor=TRUE,scores = TRUE,covmat = NULL)
+summary(pcaobjTest)
+loadings(pcaobjTest)
+plot(pcaobjTest)
+plot(pcaobjTest, type="l")
+attributes(pcaobjTest)
+pcaobjTest$scores
+#choosing onling comp1 and comp2 from PCA
+comp1 <- data.frame(pcaobjTest$scores[,1:2])
+mydata_Test <- cbind(comp1,Test[,c(1:5,9)])
+
+#NA values in data set
+NAvalue <- sapply(mydata_Train, function(x)sum(is.na(x)))
+NAvalue
+
+dataset <- rbind(mydata_Train,mydata_Test)
+str(dataset)
+#####################k-fold cross validation model##########################
+
+datasetA <- as.data.frame(lapply(dataset[c(3,4,5,6,7)],as.numeric))
+str(datasetA)
+datasetA <- cbind(datasetA,dataset[,c(1,2,8)] )
+str(datasetA)
+
+#################K-fold cross validation along with decision tree################
+datasetA$Defaulter <- factor(datasetA$Defaulter, levels = c(0,1), labels = c("No","Yes"))
+library(caret)
+fld <- createFolds(datasetA$Defaulter, k = 10, list = TRUE, returnTrain = FALSE)
+names(fld)[1] -> "train"
+fld <- cut(seq(1,nrow(datasetA)),breaks = 10,labels = FALSE)
+accA <- c()
+for (i in 1:10){
+  #segment your data using which() function
+  testIndexes <- which(fld ==i, arr.ind = TRUE)
+  testData <- datasetA[testIndexes,]
+  trainData <- datasetA[-testIndexes,]
+  #use this train and test data however you desire
+  library(C50)
+  cd1 <- C5.0(trainData[,-8],trainData$Defaulter)
+  pred <- predict.C5.0(cd1, testData[,-8])
+  CDtable <- table(testData$Defaulter, pred)
+  accuracy <- sum(diag(CDtable))/sum(CDtable)
+  #Display decision tree
+  #windows()
+  #plot(CD)
+  accA <- c(accA, accuracy)
+}
+accA
+summary(accA) #66%
+
+library(C50)
+cd1 <- C5.0(trainData[,-8],trainData$Defaulter)
+pred <- predict.C5.0(cd1, testData[,-8])
+mean(pred == testData$Defaulter) #0.82%
+str(datasetA)
+#Bagging and boosting
+acc <- c()
+for(i in 1: 15){
+  #Partitioning traing and testing data with 3:2 ratio (60%-40%)
+  inTrainingdata <- createDataPartition(datasetA$Defaulter, p = 0.6, list = F)
+  training <- datasetA[inTrainingdata,]
+  testing <- datasetA[-inTrainingdata,]
+  library(C50)
+  cd1 <- C5.0(training[,-8],training$Defaulter, trails = 10)
+  pred <- predict.C5.0(cd1, testing[,-8])
+  CDtable <- table(testing$Defaulter, pred)
+  CDtable
+  accuracy <- sum(diag(CDtable))/sum(CDtable)
+  accuracy
+  #Display decision tree
+  #windows()
+  #plot(CD)
+  acc <- c(acc, accuracy)
+  
+}
+
+acc #0.6759161
+######gradient boosting
+require(gbm)
+require(MASS)#package with the boston housing dataset
+
+#separating training and test data
+Trainingdata <- createDataPartition(datasetA$Defaulter, p = 0.6, list = F)
+training1 <- datasetA[Trainingdata,]
+testing1 <- datasetA[-Trainingdata,]
+DatasetA.boost<-gbm(training1$Defaulter ~ . ,data = training1,distribution = "gaussian",n.trees = 100,
+                 shrinkage = 0.01, interaction.depth = 4)
+summary(DatasetA.boost) #Summary gives a table of Variable Importance and a plot of Variable Importance
+#Plot of Response variable with lstat variable
+plot(DatasetA.boost,i="BrandTypeName")
+plot(DatasetA.boost, i="Comp.2")
+#Inverse relation with comp2 and BrandTypeName variable
+plot(DatasetA.boost,i="Comp.1") 
+#as the average number of rooms increases the the price increases
+n.trees = seq(from=1 ,to=100, by=1) #no of trees-a vector of 10 values 
+#Generating a Prediction matrix for each Tree
+predmatrix<-predict(DatasetA.boost,testing1,n.trees = n.trees)
+dim(predmatrix) #dimentions of the Prediction Matrix
+mean(predmatrix==testing1$Defaulter)
+#Calculating The Mean squared Test Error
+attach(datasetA)
+datasetA$Defaulter <- as.numeric(datasetA$Defaulter)
+test.error<-with(training1,apply( (predmatrix-testing1$Defaulter)^2,2,mean))
+head(test.error)
+summary(test.error) #0.23
+##################naive bayes#############################
+accNB <- c()
+for (i in 10){
+
+library(e1071)
+attach(dataset)
+model <- naiveBayes(trainData$Defaulter~., data = trainData)
+#predict
+pred1 <- predict(model,testData)
+library(gmodels)
+CrossTable(pred1,testData$Defaulter)
+accuracy <- mean(pred1==testData$Defaulter)
+accuracy
+accNB <- c(accNB, accuracy)
+}
+accNB #0.39
+#############K_Nearest Neighbour#########################
+acc <- c()
+for (i in 1:13){
+  #segment your data using which() function
+  testIndexes <- which(fld ==i, arr.ind = TRUE)
+  testData <- datasetA[testIndexes,]
+  trainData <- datasetA[-testIndexes,]
+  #use this train and test data however you desire
+  library(class)
+  predA <- knn(train = trainData[,-8], test = testData[,-8], cl = trainData[,8], k=21)
+  accuracy <- table(predA,testData$Defaulter)
+  accknn <- sum(diag(accuracy))/sum(accuracy)
+  acc <- c(acc, accknn)
+  
+}
+acc
+summary(acc)
+#0.64 aggregrate
+
+accB <- c()
+for(i in 1: 13){
+  #Partitioning traing and testing data with 7:3 ratio 
+  inTrainingdata <- createDataPartition(datasetA$Defaulter, p = 0.7, list = F)
+  training <- datasetA[inTrainingdata,]
+  testing <- datasetA[-inTrainingdata,]
+  library(class)
+  model_knn <- knn(train = training[,-8], test = testing[,-8], cl = training[,8], k=21)
+  library(gmodels)
+  TableB <- CrossTable(x=testing[,8], y=model_knn,prop.chisq = FALSE,prop.c = FALSE,prop.r = FALSE)
+  accuracyB <- mean(model_knn==testing$Defaulter)
+  accuracyB
+  accB <- c(accB, accuracyB)
+}
+accB #66%
+summary(accB)
+
+###################Logistic Regression###################
+#Type I:
+model_logistic <- glm(trainData$Defaulter~., family = "binomial", data = trainData)
+summary(model_logistic)
+prob <- predict(model_logistic, type = c("response"),trainData)
+prob
+#confusion matrix
+confusion <- table(prob > 0.5,trainData$Defaulter )
+Ptrain <- floor(prob+0.5)
+#using test data on training model
+ptest <- predict(model_logistic, newdata = testData,type = "response")
+ptest
+#converting the predicted probabilities to O's and 1's
+Ptest <- floor(ptest + 0.5)
+Ptest
+#compare predicted test with actual data set
+compareTest = table(testData$Defaulter,Ptest)
+compareTest
+#Accuracy of the test data model
+AccuracyTest = (30490 + 454)/sum(compareTest)
+AccuracyTest #76%
+
+#Type II:
+accD <- c()
+for (i in 1:13){
+  inTrainingdata1 <- createDataPartition(dataset$Defaulter, p = 0.75, list = F)
+  training1 <- dataset[inTrainingdata,]
+  testing1 <- dataset[-inTrainingdata,]
+  model_logit <- glm(training1$Defaulter~., family="binomial", data = training1)
+  summary(model_logit)
+  imp <- varImp(model_logit, scale = FALSE)
+  pred <- predict(model_logit, testing1, type = "response")
+  predtest <- floor(pred+0.5)
+  a <- table(predtest, testing1$Defaulter)
+  out <- sum(diag(a))/sum(a)
+  accD <- c(accD, out)
+}
+accD
+summary(accD)#0.58
+
+#####K-Means clustering#######################
+dataset <- read.csv(file.choose()) #myProjectPerformanceProcessed.csv
+require(plyr)
+View(dataset)
+datasetA <- dataset[,-1]
+datasetA$Defaulter <- as.numeric(datasetA$Defaulter)
+str(datasetA)
+wss = (nrow(datasetA-1)*sum(apply(datasetA,2,var)))
+for(i in 1:8)wss[i] = sum(kmeans(datasetA, centers = i)$withinss)
+plot(1:8, wss, type = "b", xlab = "Number of clusters",ylab = "within groups sum of squares" )
+title(sub = "k-means clustering Scree-Plot")
+##choosing k = 4
+km <- kmeans(datasetA, 4)
+str(km)
+km$cluster
+km$centers
+#animation
+library("animation")
+km_animation <- kmeans.ani(datasetA,4)
+#Adding clusters to the data set
+datasetA_km <- data.frame(datasetA, km$cluster)
+View(datasetA_km)
+datasetA_km_final <- datasetA_km[,c(ncol(datasetA_km),1:(ncol(datasetA_km-1)))]
+datasetA_km_final1 <- datasetA_km_final[,-10]
+View(datasetA_km_final1)
+aggregate(datasetA, by = list(km$cluster), FUN = mean)
+library(dplyr)
+GroupA <- datasetA_km_final1%>%filter(km.cluster==1)
+GroupB <- datasetA_km_final1%>%filter(km.cluster==2)
+GroupC <- datasetA_km_final1%>%filter(km.cluster==3)
+GroupD <- datasetA_km_final1%>%filter(km.cluster==4)
+#no two wheeler three wheeler and agricultural in this group D
+
